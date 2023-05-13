@@ -1,3 +1,5 @@
+#! /usr/bin/env/python311
+
 import os
 import glob
 from typing import List
@@ -35,25 +37,28 @@ def load_documents(source_dir: str) -> List[Document]:
 
 
 def main():
-    # Load environment variables
+    #  Load environment variables
     persist_directory = os.environ.get('PERSIST_DIRECTORY')
     source_directory = os.environ.get('SOURCE_DIRECTORY', 'source_documents')
     llama_embeddings_model = os.environ.get('LLAMA_EMBEDDINGS_MODEL')
     model_n_ctx = os.environ.get('MODEL_N_CTX')
 
-    # Load documents and split in chunks
+    #  Load documents and split in chunks
     print(f"Loading documents from {source_directory}")
     documents = load_documents(source_directory)
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=500, chunk_overlap=50)
     texts = text_splitter.split_documents(documents)
     print(f"Loaded {len(documents)} documents from {source_directory}")
     print(f"Split into {len(texts)} chunks of text (max. 500 tokens each)")
 
     # Create embeddings
-    llama = LlamaCppEmbeddings(model_path=llama_embeddings_model, n_ctx=model_n_ctx)
-    
+    llama = LlamaCppEmbeddings(
+        model_path=llama_embeddings_model, n_ctx=model_n_ctx)
+
     # Create and store locally vectorstore
-    db = Chroma.from_documents(texts, llama, persist_directory=persist_directory, client_settings=CHROMA_SETTINGS)
+    db = Chroma.from_documents(
+        texts, llama, persist_directory=persist_directory, client_settings=CHROMA_SETTINGS)
     db.persist()
     db = None
 
