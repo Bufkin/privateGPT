@@ -8,6 +8,8 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.vectorstores import Chroma
 from langchain.llms import GPT4All, LlamaCpp
 import os
+import argparse
+import time
 
 load_dotenv()
 
@@ -17,6 +19,8 @@ persist_directory = os.environ.get('PERSIST_DIRECTORY')
 model_type = os.environ.get('MODEL_TYPE')
 model_path = os.environ.get('MODEL_PATH')
 model_n_ctx = os.environ.get('MODEL_N_CTX')
+model_n_batch = int(os.environ.get('MODEL_N_BATCH',8))
+target_source_chunks = int(os.environ.get('TARGET_SOURCE_CHUNKS',4))
 
 
 def main():

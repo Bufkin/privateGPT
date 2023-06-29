@@ -4,11 +4,26 @@ import os
 import glob
 from typing import List
 from dotenv import load_dotenv
+from multiprocessing import Pool
+from tqdm import tqdm
 
-from langchain.document_loaders import TextLoader, PDFMinerLoader, CSVLoader
+from langchain.document_loaders import (
+    CSVLoader,
+    EverNoteLoader,
+    PyMuPDFLoader,
+    TextLoader,
+    UnstructuredEmailLoader,
+    UnstructuredEPubLoader,
+    UnstructuredHTMLLoader,
+    UnstructuredMarkdownLoader,
+    UnstructuredODTLoader,
+    UnstructuredPowerPointLoader,
+    UnstructuredWordDocumentLoader,
+)
+
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
-from langchain.embeddings import LlamaCppEmbeddings
+from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.docstore.document import Document
 from constants import CHROMA_SETTINGS
 
@@ -49,9 +64,28 @@ def main():
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=500, chunk_overlap=50)
     texts = text_splitter.split_documents(documents)
-    print(f"Loaded {len(documents)} documents from {source_directory}")
-    print(f"Split into {len(texts)} chunks of text (max. 500 tokens each)")
+    print(
+        f"Split into {len(texts)} chunks of text (max. {chunk_size} tokens each)")
+    return texts
 
+
+def does_vectorstore_exist(persist_directory: str) -> bool:
+    """
+    Checks if vectorstore exists
+    """
+    if os.path.exists(os.path.join(persist_directory, 'index')):
+        if os.path.exists(os.path.join(persist_directory, 'chroma-collections.parquet')) and os.path.exists(os.path.join(persist_directory, 'chroma-embeddings.parquet')):
+            list_index_files = glob.glob(
+                os.path.join(persist_directory, 'index/*.bin'))
+            list_index_files += glob.glob(
+                os.path.join(persist_directory, 'index/*.pkl'))
+            # At least 3 documents are needed in a working vectorstore
+            if len(list_index_files) > 3:
+                return True
+    return False
+
+
+def main():
     # Create embeddings
     llama = LlamaCppEmbeddings(
         model_path=llama_embeddings_model, n_ctx=model_n_ctx)
@@ -61,6 +95,8 @@ def main():
         texts, llama, persist_directory=persist_directory, client_settings=CHROMA_SETTINGS)
     db.persist()
     db = None
+
+    print(f"Ingestion complete! You can now run privateGPT.py to query your documents")
 
 
 if __name__ == "__main__":
